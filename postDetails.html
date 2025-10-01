@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تفاصيل البوست</title>
+    <!-- Axios -->
+    <script src="./node_modules/axios/dist/axios.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="./node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!-- Navbar JS -->
+    <script src="navbar.js" type="module"></script>
+    <link
+      rel="stylesheet"
+      href="./node_modules/bootstrap/dist/css/bootstrap.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=2.0" />
+  </head>
+  <body>
+    <!-- Navbar will be loaded here -->
+
+    <div class="container my-5" style="max-width: 700px">
+      <!-- تفاصيل البوست -->
+      <div id="post-details" class="card mb-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3 justify-content-between">
+            <div class="d-flex align-items-center">
+              <img
+                id="author-image"
+                src=""
+                class="rounded-circle me-2"
+                style="width: 48px; height: 48px"
+                alt="صورة الكاتب"
+              />
+              <div>
+                <div id="author-name" class="fw-bold"></div>
+                <div id="post-date" class="text-muted small"></div>
+              </div>
+            </div>
+            <div id="edit-post-div">
+              <button
+                id="edit-post-btn"
+                class="btn btn-outline-primary btn-sm"
+                style="display: none"
+              >
+                <i class="bi bi-pencil"></i> تعديل
+              </button>
+            </div>
+          </div>
+          <div id="post-title" class="h5 mb-2"></div>
+          <div id="post-body" class="mb-3"></div>
+          <img
+            id="post-image"
+            src=""
+            class="img-fluid rounded mb-3"
+            style="display: none"
+            alt="صورة البوست"
+          />
+          <div id="post-tags" class="mb-2"></div>
+        </div>
+      </div>
+
+      <!-- التعليقات -->
+      <div class="card mb-4">
+        <div class="card-header fw-bold">التعليقات</div>
+        <div class="card-body" id="comments-list">
+          <!-- سيتم عرض التعليقات هنا -->
+        </div>
+
+        <div class="card-footer" id="card-footer">
+          <form id="add-comment-form">
+            <input
+              type="text"
+              id="comment-input"
+              class="form-control"
+              placeholder="أضف تعليقك هنا..."
+            />
+            <button type="submit" class="btn btn-primary">إرسال</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal لتعديل البوست -->
+    <div class="modal fade" id="editPostModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="edit-post-form">
+            <div class="modal-header">
+              <h5 class="modal-title">تعديل البوست</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="edit-post-body" class="form-label">المحتوى</label>
+                <textarea
+                  class="form-control"
+                  id="edit-post-body"
+                  rows="4"
+                  required
+                ></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                إلغاء
+              </button>
+              <button type="submit" class="btn btn-primary">
+                حفظ التعديلات
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // استخراج postId من الرابط
+      const urlParams = new URLSearchParams(window.location.search);
+      const postId = urlParams.get("postId");
+      const token = localStorage.getItem("token");
+
+      function getPostDetailes() {
+        toggelLoading(true);
+        axios
+          .get(`https://tarmeezacademy.com/api/v1/posts/${postId}`)
+          .then((response) => {
+            let postDetails = response.data.data;
+            updateUi(postDetails);
+          })
+          .catch((error) => {
+            console.error("خطأ في جلب البوست:", error);
+            showMessage("حدث خطأ في تحميل البوست", "error");
+          })
+          .finally(() => {
+            toggelLoading(false);
+          });
+      }
+      function updateUi(postDetails) {
+        // معلومات البوست
+        document.getElementById("author-image").src =
+          postDetails.author.profile_image || "";
+        document
+          .getElementById("author-image")
+          .setAttribute(
+            "onerror",
+            "this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'"
+          );
+        document.getElementById("author-name").textContent =
+          postDetails.author.name || "";
+        document.getElementById("post-date").textContent =
+          postDetails.created_at || "";
+        document.getElementById("post-title").textContent =
+          postDetails.title || "";
+        document.getElementById("post-body").textContent =
+          postDetails.body || "";
+
+        // صورة البوست (إظهارها فقط إذا كانت موجودة)
+        const postImage = document.getElementById("post-image");
+        if (
+          postDetails.image &&
+          typeof postDetails.image === "string" &&
+          postDetails.image.trim() !== ""
+        ) {
+          postImage.src = postDetails.image;
+          postImage.style.display = "block";
+        } else {
+          postImage.style.display = "none";
+        }
+
+        // الوسوم
+        let tagsHTML = "";
+        if (postDetails.tags && postDetails.tags.length > 0) {
+          postDetails.tags.forEach((tag) => {
+            tagsHTML += `<span class="badge bg-primary me-1">#${
+              tag.arabic_name || tag.name
+            }</span>`;
+          });
+        }
+        document.getElementById("post-tags").innerHTML = tagsHTML;
+
+        // التعليقات
+        let commentsHTML = "";
+        if (postDetails.comments && postDetails.comments.length > 0) {
+          postDetails.comments.forEach((comment) => {
+            commentsHTML += `
+              <div class="d-flex align-items-start mb-3 border-bottom pb-2">
+                <img src="${comment.author.profile_image || ""}"
+                     alt="${comment.author.name || ""}"
+                     class="rounded-circle me-2"
+                     style="width: 36px; height: 36px;"
+                     onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                <div>
+                  <div class="fw-bold">${comment.author.name || ""}</div>
+                  <div>${comment.body || ""}</div>
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          commentsHTML = "<div class='text-muted'>لا توجد تعليقات بعد.</div>";
+        }
+        document.getElementById("comments-list").innerHTML = commentsHTML;
+
+        showUpdateButton(postDetails);
+        showShareCommentPartWhenAuth();
+      }
+      function showUpdateButton(postDetails) {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const editBtnDiv = document.getElementById("edit-post-div");
+        const editBtn = document.getElementById("edit-post-btn");
+        if (user && postDetails.author.id === user.id) {
+          editBtn.style.display = "inline-block";
+          editBtnDiv.style.display = "flex";
+        } else {
+          editBtn.style.display = "none";
+          editBtnDiv.style.display = "none";
+        }
+      }
+      function showShareCommentPartWhenAuth() {
+        const addCommentForm = document.getElementById("card-footer");
+        if (token) {
+          addCommentForm.style.setProperty("display", "inline-block", "important");
+        } else {
+          addCommentForm.style.setProperty("display", "none", "important");
+        }
+      }
+      document
+        .getElementById("add-comment-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          handleAddComment();
+        });
+      function handleAddComment() {
+        let getComment = document.getElementById("comment-input").value;
+        toggelLoading(true);
+        axios
+          .post(
+            `https://tarmeezacademy.com/api/v1/posts/${postId}/comments`,
+            {
+              body: getComment,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+          .then((response) => {
+            document.getElementById("comment-input").value = "";
+            getPostDetailes();
+            showMessage("✅ تم نشر التعليق بنجاح!", "success");
+          })
+          .catch((error) => {
+            let errorMessage = "لا يمكن ارسال تعليق فارغ";
+            showMessage(errorMessage, "error");
+            toggelLoading(false);
+          });
+      }
+      function showMessage(message, type = "success") {
+        const alertDiv = document.createElement("div");
+        alertDiv.className = "custom-alert";
+        if (type === "error") {
+          alertDiv.classList.add("custom-alert-error");
+        } else {
+          alertDiv.classList.add("custom-alert-success");
+        }
+        alertDiv.innerHTML =
+          message ||
+          (type === "success" ? "✅ تم تسجيل الدخول بنجاح!" : "حدث خطأ ما!");
+
+        document.body.appendChild(alertDiv);
+
+        setTimeout(() => {
+          alertDiv.style.opacity = "0";
+          setTimeout(() => alertDiv.remove(), 300);
+        }, 3000);
+      }
+
+      // عند الضغط على زر التعديل
+      document
+        .getElementById("edit-post-btn")
+        .addEventListener("click", function () {
+          // جلب بيانات البوست الحالية
+
+          const body = document.getElementById("post-body").textContent;
+          document.getElementById("edit-post-body").value = body;
+
+          // إظهار المودال
+          const editModal = new bootstrap.Modal(
+            document.getElementById("editPostModal")
+          );
+          editModal.show();
+        });
+
+      // عند حفظ التعديلات
+      document
+        .getElementById("edit-post-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          // اجلب القيم الجديدة
+          const newBody = document.getElementById("edit-post-body").value;
+
+          toggelLoading(true);
+          // هنا يمكنك إرسال البيانات إلى الـ API لتحديث البوست
+          // مثال (تأكد من وجود التوكن وpostId):
+          axios
+            .put(
+              `https://tarmeezacademy.com/api/v1/posts/${postId}`,
+              {
+                body: newBody,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            )
+            .then((response) => {
+              showMessage("✅ تم تعديل البوست بنجاح!", "success");
+              getPostDetailes(); // لتحديث الصفحة
+              bootstrap.Modal.getInstance(
+                document.getElementById("editPostModal")
+              ).hide();
+            })
+            .catch((error) => {
+              showMessage("حدث خطأ أثناء التعديل", "error");
+              toggelLoading(false);
+            });
+        });
+
+      function toggelLoading(show = true) {
+        const overlay = document.getElementById("global-loading-overlay");
+        if (!overlay) return;
+        if (show) {
+          overlay.style.display = "flex";
+        } else {
+          overlay.style.display = "none";
+        }
+      }
+
+      getPostDetailes();
+      showShareCommentPartWhenAuth();
+    </script>
+  </body>
+</html>

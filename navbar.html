@@ -1,0 +1,85 @@
+<!-- Navbar Start -->
+<div class="navbar-wrapper">
+  <nav class="navbar navbar-light bg-light">
+    <div
+      class="container-fluid px-0 d-flex justify-content-between align-items-center"
+    >
+      <ul class="navbar-nav mb-2 mb-lg-0 flex-row gap-4 order-1">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html" id="home-link">Home</a>
+        </li>
+        <li class="nav-item" id="profile-nav-item" style="display: none">
+          <a class="nav-link" href="userProfile.html" id="profile-link"
+            >Profile</a
+          >
+        </li>
+      </ul>
+      <a
+        class="navbar-brand fw-bold mx-auto order-0 brand-modern"
+        href="index.html"
+        style="position: absolute; left: 50%; transform: translateX(-50%)"
+      >
+        <img
+          src="tarmeaz_academy-removebg-preview.png"
+          alt="ترميز"
+          class="brand-logo"
+        />
+        مجتمع ترميز
+      </a>
+      <!-- For Non Logged in -->
+      <div class="d-flex align-items-center order-2" id="auth-buttons">
+        <button class="btn btn-outline-primary me-2" id="login-btn">
+          تسجيل دخول
+        </button>
+        <button class="btn btn-primary" id="register-btn">تسجيل</button>
+      </div>
+      <!-- For Non Logged in -->
+
+      <!-- For Logged in -->
+      <div
+        class="d-flex align-items-center order-2"
+        id="logout-div"
+        style="display: none"
+      >
+        <img
+          src="https://randomuser.me/api/portraits/men/32.jpg"
+          alt="Profile"
+          class="rounded-circle me-2"
+          style="width: 32px; height: 32px"
+          id="navProfileImage"
+        />
+        <button class="logout-btn" id="logout-btn">تسجيل خروج</button>
+      </div>
+      <!-- For Logged in -->
+    </div>
+  </nav>
+</div>
+<!-- Navbar End -->
+
+<!-- نافذة تأكيد مخصصة -->
+<div id="customLogoutModal" class="custom-modal">
+  <div class="custom-modal-content">
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+    <button id="confirmLogoutBtn" class="custom-btn confirm">تأكيد</button>
+    <button id="cancelLogoutBtn" class="custom-btn cancel">إلغاء</button>
+  </div>
+</div>
+
+<!-- Loader Overlay (Global) -->
+<div
+  id="global-loading-overlay"
+  style="
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.7);
+    justify-content: center;
+    align-items: center;
+  "
+>
+  <div class="loader-spinner"></div>
+</div>

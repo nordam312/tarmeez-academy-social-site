@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home Page</title>
+    <!-- Axios -->
+    <script src="./node_modules/axios/dist/axios.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="./node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!-- Navbar JS -->
+    <script src="navbar.js"></script>
+    <link
+      rel="stylesheet"
+      href="./node_modules/bootstrap/dist/css/bootstrap.min.css"
+    />
+    <!-- Google Fonts: Tajawal -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css?v=2.0" />
+  </head>
+  <body>
+    <!-- Navbar will be loaded here -->
+
+    <!-- Posts Section Start -->
+    <!-- نموذج إضافة منشور جديد -->
+    <div class="container" style="max-width: 600px; margin-bottom: 32px">
+      <form id="add-post-form" class="card p-3 mb-4 shadow-sm">
+        <div class="mb-2">
+          <input
+            type="text"
+            class="form-control mb-2"
+            id="new-post-title"
+            placeholder="عنوان المنشور"
+            required
+          />
+          <textarea
+            class="form-control mb-2"
+            id="new-post-body"
+            rows="3"
+            placeholder="ماذا تريد أن تكتب؟"
+            style="resize: none"
+            required
+          ></textarea>
+          <input
+            type="file"
+            class="form-control"
+            id="new-post-image"
+            accept="image/*"
+          />
+        </div>
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary">نشر</button>
+        </div>
+      </form>
+    </div>
+    <div id="post-card-id" class="container mt-5" style="max-width: 600px">
+      <div class="post-card">
+        <!-- <div class="d-flex align-items-center mb-2">
+          <img
+            src="https://randomuser.me/api/portraits/men/32.jpg"
+            class="rounded-circle me-2"
+            style="width: 36px; height: 36px"
+            alt="محمد أحمد"
+            onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'"
+          />
+
+          <span class="post-author">محمد أحمد</span>
+          <span class="post-date ms-2">قبل دقيقة</span>
+        </div>
+        <div>هذا أول بوست تجريبي على الموقع! 🚀</div>
+        <div class="tags mb-2">
+          <span class="badge bg-primary me-1">#تجريب</span>
+          <span class="badge bg-primary me-1">#موقع</span>
+        </div>
+        <img
+          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
+          class="post-image"
+          alt="post image"
+        />
+        <span class="comments-toggle" data-comments="0">2 تعليقات</span>
+        <div class="comments-section">
+          <div class="comment">
+            <span class="comment-author">سارة:</span> رائع جداً 👏
+          </div>
+          <div class="comment">
+            <span class="comment-author">خالد:</span> متحمس أشوف المزيد!
+          </div>
+          <form class="add-comment">
+            <input type="text" placeholder="أضف تعليق..." disabled />
+            <button type="submit" disabled>إرسال</button>
+          </form>
+        </div> -->
+      </div>
+    </div>
+
+    <div class="modal fade" id="editPostModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="edit-post-form">
+            <div class="modal-header">
+              <h5 class="modal-title">تعديل البوست</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="edit-post-title" class="form-label">العنوان</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="edit-post-title"
+                  rows="4"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="edit-post-body" class="form-label">المحتوى</label>
+                <textarea
+                  class="form-control"
+                  id="edit-post-body"
+                  rows="4"
+                  style="resize: none"
+                  required
+                ></textarea>
+              </div>
+              <div class="mb-3">
+                <label for="edit-post-image" class="form-label">الصورة</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="edit-post-image"
+                  rows="4"
+                  style="resize: none"
+                  required
+                />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                إلغاء
+              </button>
+              <button type="submit" class="btn btn-primary">
+                حفظ التعديلات
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- نافذة تأكيد مخصصة -->
+    <div id="customDeleteModal" class="custom-modal">
+      <div class="custom-modal-content">
+        <p>هل أنت متأكد أنك تريد حذف هذا المنشور؟</p>
+        <button id="confirmDeleteBtn" class="custom-btn confirm">تأكيد</button>
+        <button id="cancelDeleteBtn" class="custom-btn cancel">إلغاء</button>
+      </div>
+    </div>
+
+    <script>
+      let currentPage = 1;
+      let totalPages = 1; // سنحسبها من الـ API
+      const limit = 5; // عدد المنشورات في كل صفحة
+      const token = localStorage.getItem("token");
+      let deleteEditingPostId = null;
+      // ========= INFINITE SCROLL ========== //
+      window.addEventListener("scroll", function () {
+        const endOfPage =
+          window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
+        if (endOfPage && currentPage < totalPages) {
+          currentPage = currentPage + 1;
+          GetPosts(currentPage, true); // append = true
+        }
+      });
+      // ========= INFINITE SCROLL ========== //
+
+      // ================== جلب البوستات من الـ API ==================
+      function GetPosts(page = 1, append = false) {
+        toggelLoading(true);
+        axios
+          .get(
+            `https://tarmeezacademy.com/api/v1/posts?limit=${limit}&page=${page}`
+          )
+          .then(function (response) {
+            let posts = response.data.data;
+            totalPages = response.data.meta.last_page; // عدد الصفحات الكلي من الـ API
+            SetPosts(posts, append);
+            toggelLoading(false);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+
+      // ================== نهاية جلب البوستات ==================
+
+      // ================== رسم جميع البوستات ==================
+      function SetPosts(posts, append = false) {
+        let postsHTML = "";
+        for (const post of posts) {
+          // فحص الصور للمساعدة في التطوير
+          if (post.image && typeof post.image !== "string") {
+            console.log(
+              "صورة غير صحيحة:",
+              post.image,
+              "نوع البيانات:",
+              typeof post.image
+            );
+          }
+          let tagsHTML = "";
+          if (post.tags && post.tags.length > 0) {
+            for (let i = 0; i < post.tags.length; i++) {
+              tagsHTML += `<span class="badge bg-primary me-1">#${post.tags[i].name}</span>`;
+            }
+          }
+          let user = JSON.parse(localStorage.getItem("user"));
+          let userId = null;
+          if (user) {
+            userId = user.id;
+          }
+          let isMyPost = user != null && post.author.id === userId;
+          let buttonContent = ``;
+
+          if (isMyPost) {
+            buttonContent = `
+                <button class="btn btn-outline-danger btn-sm edit-post-btn"
+                  data-post-id="${post.id}"
+                  onclick="deleatPostClicked(event, ${post.id})"
+                  style="position:absolute; top:16px; right:71px; z-index:2;">
+                  حذف
+                </button>
+                <button class="btn btn-outline-primary btn-sm edit-post-btn"
+                  data-post-id="${post.id}"
+                  onclick="editPostClicked(event, ${post.id})"
+                  style="position:absolute; top:16px; right:16px; z-index:2;">
+                  تعديل
+                </button>
+
+              `;
+          }
+          postsHTML += `
+        <div class="post-card" onclick="goToPostDetails(${
+          post.id
+        })" style="cursor:pointer; position:relative;">
+
+          ${buttonContent}
+
+          <div class="d-flex align-items-center mb-2">
+            <a href="userProfile.html?id=${
+              post.author.id
+            }" onclick="event.stopPropagation()" style="text-decoration: none; color: inherit;">
+              <img
+                src="${post.author.profile_image}"
+                class="rounded-circle me-2"
+                style="width: 36px; height: 36px"
+                alt="${post.author.name}"
+                onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'"
+              />
+              <span class="post-author">${post.author.name}</span>
+            </a>
+            <span class="post-date ms-2">${post.created_at}</span>
+          </div>
+          <div class="fw-bold mb-2 post-title">
+            ${post.title ? post.title : ""}
+          </div>
+          <div class="fw-bold mb-2 post-body">
+            ${post.body ? post.body : ""}
+          </div>
+          <div class="tags mb-2">
+            ${tagsHTML}
+          </div>
+          ${
+            post.image &&
+            typeof post.image === "string" &&
+            post.image.trim() !== ""
+              ? `<img src="${post.image}" class="post-image" alt="post image" onerror="this.style.display='none'" />`
+              : ""
+          }
+          <span class="comments-toggle" data-comments="0">${
+            post.comments_count
+          } تعليقات</span>
+          <div class="comments-section">
+            <form class="add-comment">
+              <input type="text" placeholder="أضف تعليق..." disabled />
+              <button type="submit" disabled>إرسال</button>
+            </form>
+          </div>
+        </div>
+      `;
+        }
+        const postsContainer = document.getElementById("post-card-id");
+        if (append) {
+          postsContainer.innerHTML += postsHTML; // أضف الجديد فقط
+        } else {
+          postsContainer.innerHTML = postsHTML; // استبدل (لأول مرة فقط)
+        }
+      }
+
+      // ================== نهاية رسم جميع البوستات ==================
+      function editPostClicked(event, postId) {
+        event.stopPropagation();
+        deleteEditingPostId = postId; // خزّن معرف البوست الجاري تعديله
+
+        const postCard = event.target.closest(".post-card");
+        const postBodyDiv = postCard.querySelector(".post-body");
+        const postTitleDiv = postCard.querySelector(".post-title");
+
+        const body = postBodyDiv ? postBodyDiv.textContent : "";
+        const title = postTitleDiv ? postTitleDiv.textContent : "";
+        document.getElementById("edit-post-body").value = body;
+        document.getElementById("edit-post-title").value = title;
+
+        const editModal = new bootstrap.Modal(
+          document.getElementById("editPostModal")
+        );
+        editModal.show();
+      }
+
+      function deleatPostClicked(event, postId) {
+        event.stopPropagation();
+        deleteEditingPostId = postId;
+        document.getElementById("customDeleteModal").style.display = "flex";
+      }
+      // ================== تفعيل إظهار/إخفاء التعليقات ==================
+      function activateCommentsToggle() {
+        document
+          .querySelectorAll(".comments-toggle")
+          .forEach(function (toggle) {
+            toggle.addEventListener("click", function () {
+              var section =
+                this.parentElement.querySelector(".comments-section");
+              section.classList.toggle("active");
+            });
+          });
+      }
+      // ================== الدالة الرئيسية ==================
+      function main() {
+        GetPosts(1, false); // append = false
+        activateCommentsToggle();
+        // ربط أحداث أزرار الحذف مرة واحدة فقط
+        document.getElementById("confirmDeleteBtn").onclick = function () {
+          if (deleteEditingPostId !== null) {
+            let token = localStorage.getItem("token");
+            toggelLoading(true);
+            axios
+              .delete(
+                `https://tarmeezacademy.com/api/v1/posts/${deleteEditingPostId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              )
+              .then((response) => {
+                document.getElementById("customDeleteModal").style.display =
+                  "none";
+                window.location.reload();
+              })
+              .catch((error) => {
+                console.log(error);
+              })
+              .finally(() => {
+                toggelLoading(false);
+              });
+          }
+        };
+        document.getElementById("cancelDeleteBtn").onclick = function () {
+          document.getElementById("customDeleteModal").style.display = "none";
+        };
+      }
+      main();
+      // ================== نهاية الدالة الرئيسية ==================
+      document
+        .getElementById("edit-post-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          let token = localStorage.getItem("token");
+          const newBody = document.getElementById("edit-post-body").value;
+          const newTitle = document.getElementById("edit-post-title").value;
+          const newImage = document.getElementById("edit-post-image").files[0];
+
+          const formData = new FormData();
+          formData.append("body", newBody);
+          formData.append("title", newTitle);
+          formData.append("image", newImage);
+          formData.append("_method", "put");
+          toggelLoading(true);
+          axios
+            .post(
+              `https://tarmeezacademy.com/api/v1/posts/${deleteEditingPostId}`,
+              formData,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            )
+            .then((response) => {
+              const modal = bootstrap.Modal.getInstance(
+                document.getElementById("editPostModal")
+              );
+              modal.hide();
+              GetPosts();
+            })
+            .finally(() => {
+              toggelLoading(false);
+            });
+        });
+      function goToPostDetails(postId) {
+        window.location.href = `postDetails.html?postId=${postId}`;
+      }
+    </script>
+    <script src="shareNewPost.js"></script>
+  </body>
+</html>
