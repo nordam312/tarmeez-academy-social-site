@@ -416,6 +416,13 @@
       function goToPostDetails(postId) {
         window.location.href = `postDetails.html?postId=${postId}`;
       }
+
+      // ============ دالة التحكم باللودر ============
+      function toggelLoading(show = true) {
+        const overlay = document.getElementById("global-loading-overlay");
+        if (!overlay) return;
+        overlay.style.display = show ? "flex" : "none";
+      }
     </script>
     <script src="shareNewPost.js"></script>
 
